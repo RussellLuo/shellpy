@@ -30,7 +30,7 @@ def get_items(basepath, recursive, list_startswithdot):
     files, dirs = get_paths(basepath)
 
     def make_item(path, names):
-        upath = path and unicode(path, ENCODING)
+        upath = unicode(path, ENCODING)
         unames = [unicode(name, ENCODING) for name in names]
         details = [os.stat(os.path.join(upath, uname)) for uname in unames]
 
@@ -41,7 +41,7 @@ def get_items(basepath, recursive, list_startswithdot):
         return list_startswithdot or not os.path.basename(path).startswith(u'.')
 
     # files will be part of the result items
-    items = files and [make_item(None, files)]
+    items = files and [make_item('', files)]
 
     # directories need to be processed further
     for path in dirs:
