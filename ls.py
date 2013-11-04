@@ -3,7 +3,6 @@
 
 """List directory contents"""
 
-from __future__ import print_function
 import sys
 import os
 
@@ -13,8 +12,8 @@ def ls(basepath, recursive, list_startswithdot, in_detail, in_detail_numid, one_
     """Main entry of `ls`.
     """
     items = get_items(basepath, recursive, list_startswithdot)
-    has_path_title = recursive or len(items) > 1
-    printf(items, has_path_title, in_detail, in_detail_numid, one_perline)
+    has_title = recursive or len(items) > 1
+    print_items(items, has_title, in_detail, in_detail_numid, one_perline)
 
 def get_items(basepath, recursive, list_startswithdot):
     """Get all items in `basepath`.
@@ -32,7 +31,6 @@ def get_items(basepath, recursive, list_startswithdot):
 
     def make_item(path, names):
         upath = path and unicode(path, ENCODING)
-
         unames = [unicode(name, ENCODING) for name in names]
         details = [os.stat(os.path.join(upath, uname)) for uname in unames]
 
@@ -49,30 +47,33 @@ def get_items(basepath, recursive, list_startswithdot):
     for path in dirs:
         if recursive: # walk the directory tree
             for dirpath, dirnames, filenames in os.walk(path):
-                files = dirnames + filenames
                 for i, _ in enumerate(dirnames):
                     if not is_target(dirnames[i]): # don't walk non-target subdirectories
                         del dirnames[i]
-                items.append(make_item(dirpath, filter(is_target, files)))
+                # remove non-target file
+                files = filter(is_target, dirnames + filenames)
+                items.append(make_item(dirpath, files))
         else:
+            # remove non-target file
             files = filter(is_target, os.listdir(path))
             items.append(make_item(path, files))
 
     return items
 
-def printf(items, has_path_title, in_detail, in_detail_numid, one_perline):
-    """Print `items` with specified format.
+def print_items(items, has_title, in_detail, in_detail_numid, one_perline):
+    """Print `items` with specified format .
     """
     count = len(items)
-    for i, item in enumerate(items):
+    for i, item in enumerate(sort_items(items)):
         path, content = item
 
         # print title
-        if has_path_title and path:
+        if has_title and path:
             print(path + u':')
 
         # print content
-        datas = get_formatted_datas(do_sort(content), in_detail, in_detail_numid, one_perline)
+        datas = get_formatted_datas(sort_content(content),
+                                    in_detail, in_detail_numid, one_perline)
         print(datas)
 
         # print a newline if it's not the last item
@@ -111,8 +112,13 @@ def get_formatted_datas(content, in_detail, in_detail_numid, one_perline):
 
     return sep.join(datas)
 
-def do_sort(content):
-    """Sort `content`.
+def sort_items(items):
+    """Sort `items` by path.
+    """
+    return sorted(items, key=lambda c: c[0].lower())
+
+def sort_content(content):
+    """Sort `content` by name.
     """
     return sorted(content, key=lambda c: c[0].lower())
 
@@ -189,5 +195,5 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    #print(args.file, args.recursive, args.l, args.numeric_uid_gid, args.all, args.one)
+    #print(args)
     ls(args.file, args.recursive, args.all, args.l, args.numeric_uid_gid, args.one)
